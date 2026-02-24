@@ -3,8 +3,15 @@ import express from "express";
 const app = express();
 
 app.use((req, res, next) => {
-  console.log(`Request lewat jalur ini: ${req.url}`);
+  if (false) {
+    next("salah");
+    return;
+  }
   next();
+});
+
+app.use((err, req, res, next) => {
+  res.send("Error Occurred");
 });
 
 app.get("/", (req, res) => {
@@ -14,10 +21,5 @@ app.get("/", (req, res) => {
 app.get("/:greeting", (req, res) => {
   res.send(req.params.greeting);
 });
-
-const PORT = 3001;
-app.listen(PORT, () => {
-  console.log(`Server berjalan di http://localhost:${PORT}`);
-});
-
+ 
 export default app;

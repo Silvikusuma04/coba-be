@@ -1,14 +1,16 @@
 {
-  "name": "silvi",
+  "name": "kada23feb",
   "version": "1.0.0",
-  "description": "coba",
-  "license": "ISC",
-  "author": "silvikusuma",
+  "description": "practice express",
   "type": "module",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node api/index.js",
-    "dev": "node api/index.js"
+    "start": "node index.js"
+  },
+  "author": "yusri",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1"
   }
 }

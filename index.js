@@ -1,10 +1,13 @@
 import express from "express";
 const app = express();
+
 app.use((req, res, next) => {
-  if (false) {
-    next("not found");
-    return;
+  const authorized = false;
+
+  if (!authorized) {
+    return res.status(401).send("Yah Error");
   }
+
   next();
 });
 
@@ -17,7 +20,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/silvi", (req, res) => {
-  res.send("Ini Silvi Lagi Haloo");
+  res.send("ini Silvi Lagi Haloo");
 });
 
 app.get("/:greeting", (req, res) => {

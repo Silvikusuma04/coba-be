@@ -16,6 +16,9 @@ app.get("/", (req, res) => {
   res.send("Halo ini Silvi Kusuma Wardhani Gunawan :)");
 });
 
+app.get("/silvi", (req, res) => {
+  res.send("Ini Silvi Lagi Haloo");
+
 app.get("/:greeting", (req, res) => {
   const { greeting } = req.params;
   res.send(greeting);

@@ -18,10 +18,11 @@ app.get("/", (req, res) => {
 
 app.get("/silvi", (req, res) => {
   res.send("Ini Silvi Lagi Haloo");
+});
 
 app.get("/:greeting", (req, res) => {
   const { greeting } = req.params;
   res.send(greeting);
 });
  
-app.listen(3000);
+app.listen(8080);

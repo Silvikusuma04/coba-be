@@ -13,7 +13,7 @@ app.use((err, req, res, next) => {
 });
 
 app.get("/", (req, res) => {
-  res.send("Halo ini Silvi Kusuma Wardhani Gunawan");
+  res.send("Halo ini Silvi Kusuma Wardhani Gunawan :)");
 });
 
 app.get("/:greeting", (req, res) => {

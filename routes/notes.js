@@ -5,7 +5,8 @@ const router = Router();
 
 router.get('/', async (req, res, next) => {
   try {
-    const notes = await Post.find().sort({ createdAt: -1 });
+    const notes = await Post.find();
+    console.log('Total data:', notes.length);
     res.json(notes);
   } catch (error) {
     next(error);

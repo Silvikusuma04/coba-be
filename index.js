@@ -32,14 +32,15 @@ import dotenv from 'dotenv';
 import notesRouter from './routes/notes.js';
 import  cors from 'cors';
 
-app.use(cors(
-  {origin : '*'
-  }
-));
 
 dotenv.config();
 
 const app = express();
+
+app.use(cors(
+  {origin : '*'
+  }
+));
 
 app.use(express.json());
 app.use('/notes', notesRouter);

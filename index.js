@@ -1,30 +1,46 @@
-import express from "express";
+// import express from "express";
+// const app = express();
+
+// app.use((req, res, next) => {
+//   const authorized = true;
+
+//   if (!authorized) {
+//     return res.status(401).send("Yah Error");
+//   }
+
+//   next();
+// });
+
+
+// app.get("/silvi", (req, res) => {
+//   res.send("ini Silvi Lagi Haloo");
+// });
+
+// app.get("/:greeting", (req, res) => {
+//   const { greeting } = req.params;
+//   res.send(greeting);
+// });
+
+// app.use((err, req, res, next) => {
+//   res.send("Error Occurred");
+// });
+ 
+// app.listen(8080);
+import express from 'express';
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import notesRouter from './routes/notes.js';
+
+dotenv.config();
+
 const app = express();
 
-app.use((req, res, next) => {
-  const authorized = true;
+app.use(express.json());
+app.use('/notes', notesRouter);
 
-  if (!authorized) {
-    return res.status(401).send("Yah Error");
-  }
+await mongoose.connect(process.env.MONGO_URI);
+console.log('Database connected');
 
-  next();
+app.listen(8080, () => {
+  console.log('Server running on port 8080');
 });
-app.get("/", (req, res) => {
-  res.send("Halo ini Silvi Kusuma Wardhani Gunawan :)");
-});
-
-app.get("/silvi", (req, res) => {
-  res.send("ini Silvi Lagi Haloo");
-});
-
-app.get("/:greeting", (req, res) => {
-  const { greeting } = req.params;
-  res.send(greeting);
-});
-
-app.use((err, req, res, next) => {
-  res.send("Error Occurred");
-});
- 
-app.listen(8080);

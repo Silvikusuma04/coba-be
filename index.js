@@ -30,6 +30,12 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import notesRouter from './routes/notes.js';
+import  cors from 'cors';
+
+app.use(cors(
+  {origin : '*'
+  }
+));
 
 dotenv.config();
 

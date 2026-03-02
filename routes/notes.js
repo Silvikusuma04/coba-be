@@ -1,20 +1,30 @@
 import { Router } from "express";
 import { Post } from "../models/index.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const router = Router();
 
+// Semua notes wajib login
+router.use(requireAuth);
+
+// GET ALL
 router.get("/", async (req, res, next) => {
   try {
-    const notes = await Post.find().sort({ createdAt: -1 });
+    const notes = await Post.find({ author: req.user.email })
+      .sort({ createdAt: -1 });
     res.json(notes);
   } catch (error) {
     next(error);
   }
 });
 
+// GET BY ID
 router.get("/:id", async (req, res, next) => {
   try {
-    const note = await Post.findById(req.params.id);
+    const note = await Post.findOne({
+      _id: req.params.id,
+      author: req.user.email
+    });
 
     if (!note) {
       return res.status(404).json({ message: "Note not found" });
@@ -26,12 +36,13 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
+// CREATE
 router.post("/", async (req, res, next) => {
-  const { title, content, author } = req.body;
+  const { title, content } = req.body;
 
-  if (!title || !content || !author) {
+  if (!title || !content) {
     return res.status(400).json({
-      message: "Title, content, and author are required"
+      message: "Title and content required"
     });
   }
 
@@ -39,7 +50,7 @@ router.post("/", async (req, res, next) => {
     const note = await Post.create({
       title: title.trim(),
       content,
-      author: author.trim()
+      author: req.user.email
     });
 
     res.status(201).json(note);
@@ -48,16 +59,16 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.put("/title/:title", async (req, res, next) => {
+// UPDATE
+router.put("/:id", async (req, res, next) => {
   try {
-    const { title, content, author } = req.body;
+    const { title, content } = req.body;
 
     const updated = await Post.findOneAndUpdate(
-      { title: req.params.title.trim() },
+      { _id: req.params.id, author: req.user.email },
       {
         ...(title && { title: title.trim() }),
-        ...(content && { content }),
-        ...(author && { author: author.trim() })
+        ...(content && { content })
       },
       { new: true }
     );
@@ -72,10 +83,12 @@ router.put("/title/:title", async (req, res, next) => {
   }
 });
 
-router.delete("/title/:title", async (req, res, next) => {
+// DELETE
+router.delete("/:id", async (req, res, next) => {
   try {
     const deleted = await Post.findOneAndDelete({
-      title: req.params.title.trim()
+      _id: req.params.id,
+      author: req.user.email
     });
 
     if (!deleted) {

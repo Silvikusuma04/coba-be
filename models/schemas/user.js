@@ -1,3 +1,4 @@
+// models/schemas/user.js
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import validator from "validator";
@@ -8,7 +9,6 @@ const SALT_ROUNDS = 10;
 const UserSchema = new mongoose.Schema(
   {
     username: { type: String, required: true, trim: true },
-
     email: {
       type: String,
       required: true,
@@ -20,9 +20,7 @@ const UserSchema = new mongoose.Schema(
         message: "Email tidak valid",
       },
     },
-
     password: { type: String, required: true },
-
     resetPasswordToken: { type: String },
     resetPasswordExpires: { type: Date },
   },
@@ -31,29 +29,18 @@ const UserSchema = new mongoose.Schema(
 
 UserSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
-
   const hashed = await bcrypt.hash(this.password, SALT_ROUNDS);
   this.password = hashed;
 });
 
-
-// Compare password
 UserSchema.methods.comparePassword = function (candidate) {
   return bcrypt.compare(candidate, this.password);
 };
 
-
-// Generate reset token
 UserSchema.methods.generatePasswordReset = function () {
   const resetToken = crypto.randomBytes(32).toString("hex");
-
-  this.resetPasswordToken = crypto
-    .createHash("sha256")
-    .update(resetToken)
-    .digest("hex");
-
-  this.resetPasswordExpires = Date.now() + 3600 * 1000;
-
+  this.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+  this.resetPasswordExpires = Date.now() + 3600 * 1000; // 1 jam
   return resetToken;
 };
 

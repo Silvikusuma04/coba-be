@@ -5,11 +5,13 @@ import validator from "validator";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
+import jwt from "jsonwebtoken";
 
 const router = Router();
 
-// Password policy: minimal 8 char, minimal 1 uppercase, minimal 1 special char
 const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+const JWT_SECRET = process.env.JWT_SECRET || "CHANGE_ME";
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "7d";
 
 // REGISTER
 router.post("/register", async (req, res, next) => {
@@ -22,11 +24,9 @@ router.post("/register", async (req, res, next) => {
 
     if (!PASSWORD_REGEX.test(password))
       return res.status(400).json({
-        message:
-          "Password minimal 8 karakter, mengandung 1 huruf besar dan 1 karakter spesial",
+        message: "Password minimal 8 karakter, mengandung 1 huruf besar dan 1 karakter spesial",
       });
 
-    // cek duplikat email
     const exists = await User.findOne({ email });
     if (exists) return res.status(409).json({ message: "Email sudah terdaftar" });
 
@@ -37,6 +37,7 @@ router.post("/register", async (req, res, next) => {
   }
 });
 
+// LOGIN — sekarang return token + user
 router.post("/login", async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -47,13 +48,17 @@ router.post("/login", async (req, res, next) => {
 
     const ok = await user.comparePassword(password);
     if (!ok) return res.status(401).json({ message: "Kredensial salah" });
-    res.json({ id: user._id, username: user.username, email: user.email });
+
+    const payload = { id: user._id, email: user.email, username: user.username };
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+
+    res.json({ token, user: { id: user._id, username: user.username, email: user.email } });
   } catch (err) {
     next(err);
   }
 });
 
-// FORGOT PASSWORD
+// FORGOT / RESET (sama seperti sebelumnya)
 router.post("/forgot-password", async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -67,7 +72,6 @@ router.post("/forgot-password", async (req, res, next) => {
 
     const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/reset-password/${resetToken}`;
 
-    // Jika SMTP di-set, kirim email, kalau tidak return resetUrl (dev)
     if (process.env.SMTP_HOST && process.env.SMTP_USER) {
       const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
@@ -85,7 +89,6 @@ router.post("/forgot-password", async (req, res, next) => {
 
       return res.json({ message: "Jika akun ada, email reset dikirim" });
     } else {
-      // fallback dev
       return res.json({ message: "Reset token generated (dev)", resetUrl });
     }
   } catch (err) {
@@ -93,16 +96,15 @@ router.post("/forgot-password", async (req, res, next) => {
   }
 });
 
-// RESET PASSWORD (pakai token)
 router.post("/reset-password/:token", async (req, res, next) => {
   try {
     const token = req.params.token;
     const { password } = req.body;
     if (!password) return res.status(400).json({ message: "password required" });
+
     if (!PASSWORD_REGEX.test(password))
       return res.status(400).json({
-        message:
-          "Password minimal 8 karakter, mengandung 1 huruf besar dan 1 karakter spesial",
+        message: "Password minimal 8 karakter, mengandung 1 huruf besar dan 1 karakter spesial",
       });
 
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
@@ -114,7 +116,7 @@ router.post("/reset-password/:token", async (req, res, next) => {
 
     if (!user) return res.status(400).json({ message: "Token tidak valid atau sudah kedaluwarsa" });
 
-    user.password = password; 
+    user.password = password; // akan di-hash oleh pre save hook
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();

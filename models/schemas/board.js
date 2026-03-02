@@ -1,3 +1,4 @@
+// models/schemas/board.js
 import { Schema } from "mongoose";
 
 const PostSchema = new Schema(

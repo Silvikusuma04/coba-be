@@ -53,7 +53,8 @@
 // app.listen(8080, () => {
 //   console.log('Server running on port 8080');
 // });
- 
+
+// app.js
 import express from "express";
 import cors from "cors";
 import notesRouter from "./routes/notes.js";
@@ -67,9 +68,10 @@ app.use(express.json());
 app.use("/notes", notesRouter);
 app.use("/users", usersRouter);
 
+// global error fallback (jika ada error yang tak tertangani)
 app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({ message: "Server error" });
+  console.error("Unhandled error:", err);
+  res.status(500).json({ message: err?.message || "Server error" });
 });
 
 export default app;

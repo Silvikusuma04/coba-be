@@ -1,6 +1,9 @@
+// models/schemas/user.js
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 import validator from "validator";
+
+const SALT_ROUNDS = 10;
 
 const UserSchema = new mongoose.Schema(
   {
@@ -21,16 +24,13 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Hash password sebelum save
-UserSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-
-  const salt = await bcrypt.genSalt(10);
+UserSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
+  const salt = await bcrypt.genSalt(SALT_ROUNDS);
   this.password = await bcrypt.hash(this.password, salt);
-  next();
 });
 
-UserSchema.methods.comparePassword = function (candidate) {
+UserSchema.methods.comparePassword = async function (candidate) {
   return bcrypt.compare(candidate, this.password);
 };
 

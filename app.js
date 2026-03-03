@@ -54,49 +54,107 @@
 //   console.log('Server running on port 8080');
 // });
 
+// app.js
 import express from "express";
 import cors from "cors";
 import mongoose from "mongoose";
+import dotenv from "dotenv";
+
 import notesRouter from "./routes/notes.js";
 import usersRouter from "./routes/users.js";
+import emailRouter from "./routes/email.js"; // optional test route
+
+dotenv.config();
 
 const app = express();
 
-app.use(cors({ origin: "*" }));
+/* ==============================
+   BASIC MIDDLEWARE
+============================== */
+
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "*",
+    credentials: true,
+  })
+);
+
 app.use(express.json());
+
+/* ==============================
+   DATABASE CONNECTION (CACHED)
+   Safe for Vercel / Serverless
+============================== */
 
 let cached = global.mongoose;
 
 if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
+  cached = global.mongoose = {
+    conn: null,
+    promise: null,
+  };
 }
 
 async function connectDB() {
   if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(process.env.MONGO_URI, {
-      bufferCommands: false,
-    }).then((mongoose) => mongoose);
+    if (!process.env.MONGO_URI) {
+      throw new Error("MONGO_URI is missing in environment variables");
+    }
+
+    cached.promise = mongoose
+      .connect(process.env.MONGO_URI, {
+        bufferCommands: false,
+      })
+      .then((mongooseInstance) => {
+        console.log("MongoDB connected");
+        return mongooseInstance;
+      });
   }
 
   cached.conn = await cached.promise;
   return cached.conn;
 }
 
-// Middleware untuk memastikan koneksi sebelum route jalan
+// Ensure DB connected before handling request
 app.use(async (req, res, next) => {
-  await connectDB();
-  next();
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error("Database connection error:", err);
+    return res.status(500).json({
+      message: "Database connection failed",
+    });
+  }
 });
 
+/* ==============================
+   ROUTES
+============================== */
 
 app.use("/notes", notesRouter);
 app.use("/users", usersRouter);
+app.use("/email", emailRouter); // optional, for SMTP testing
+
+/* ==============================
+   HEALTH CHECK (Optional)
+============================== */
+
+app.get("/", (req, res) => {
+  res.json({
+    status: "API running",
+    timestamp: new Date(),
+  });
+});
 
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);
-  res.status(500).json({ message: err?.message || "Server error" });
+
+  res.status(500).json({
+    message: err?.message || "Internal Server Error",
+  });
 });
 
 export default app;

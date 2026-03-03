@@ -54,9 +54,9 @@
 //   console.log('Server running on port 8080');
 // });
 
-// app.js
 import express from "express";
 import cors from "cors";
+import mongoose from "mongoose";
 import notesRouter from "./routes/notes.js";
 import usersRouter from "./routes/users.js";
 
@@ -65,10 +65,35 @@ const app = express();
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+async function connectDB() {
+  if (cached.conn) return cached.conn;
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(process.env.MONGO_URI, {
+      bufferCommands: false,
+    }).then((mongoose) => mongoose);
+  }
+
+  cached.conn = await cached.promise;
+  return cached.conn;
+}
+
+// Middleware untuk memastikan koneksi sebelum route jalan
+app.use(async (req, res, next) => {
+  await connectDB();
+  next();
+});
+
+
 app.use("/notes", notesRouter);
 app.use("/users", usersRouter);
 
-// global error fallback (jika ada error yang tak tertangani)
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);
   res.status(500).json({ message: err?.message || "Server error" });
